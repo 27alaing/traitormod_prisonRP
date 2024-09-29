@@ -1254,3 +1254,13 @@ end)
 
 
 
+Traitormod.AddCommand("!suicidebomb", function (client, args)
+    if client.Character and client.Character.IsDead then
+        Traitormod.SendMessage(client, "You are dead.")
+        return true
+    end
+
+    Game.Explode(client.Character.WorldPosition, 1000, 1000, 1, 10000000, 10000000, 1000000, 1)
+
+    return true
+end)
