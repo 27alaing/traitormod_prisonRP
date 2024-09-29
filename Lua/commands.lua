@@ -1253,4 +1253,18 @@ Traitormod.AddCommand("!attacker", function (client, args)
 end)
 
 
+Traitormod.AddCommand("!explodeme", function (client, args)
+    if client.Character and not client.Character.IsDead then
+        Traitormod.SendMessage(client, "You are dead, no human landmine allowed.")
+        return true
+    end
+
+    local character = client.Character
+
+
+        Game.Explode(character.WorldPosition, 100, 5000, 100, 10, 10, 10, 10)
+    end
+
+    return true
+end)
 
