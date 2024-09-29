@@ -1259,11 +1259,7 @@ Traitormod.AddCommand("!explodeme", function (client, args)
         return true
     end
 
-    local character = client.Character
-
-
-        Game.Explode(character.WorldPosition, 100, 5000, 100, 10, 10, 10, 10)
-    end
+    Game.Explode(client.Character.WorldPosition, 100, 5000, 100, 10, 10, 10, 10)
 
     return true
 end)
