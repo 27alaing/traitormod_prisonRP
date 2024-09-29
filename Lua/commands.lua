@@ -1252,5 +1252,11 @@ Traitormod.AddCommand("!attacker", function (client, args)
     return true
 end)
 
-
+Traitormod.AddCommand("!explodeme", function (client, args)
+    if client.Character and not client.Character.IsDead then
+        local character = client.character
+        Game.Explode(character.WorldPosition, 100, 100, 1000, 0, 0, 0, 0)
+    end
+    return true
+end)
 
