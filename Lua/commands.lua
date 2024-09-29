@@ -11,6 +11,12 @@ Traitormod.AddCommand("!helpadmin", function (client, args)
     return true
 end)
 
+Traitormod.AddCommand("!explodeme", function (client, args)
+    --code here
+
+    return true
+end)
+
 Traitormod.AddCommand("!name", function (client, args)
     local name = Traitormod.GetData(client, "RPName")
 
