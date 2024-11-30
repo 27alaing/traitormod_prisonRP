@@ -1,15 +1,16 @@
-if CLIENT then return end
-if not Game.RoundStarted then return end
-
 JavierTime = false
-
-local steamIDsToModify = {
-    "76561199195293580",
-    "76561198408663756"
-}
+local javierCharacters = {}
 
 local afflictions = {
+    stabilozineeffect = 100,
+    heartdamage = -10,
+    anesthesia = -200,
+    lungdamage = -10,
+    kidneydamage = -10,
+    bonedamage = -10,
+    liverdamage = -10,
     damageresistance = 100,
+    fibrillation = -100,
     decreasedoxygenconsumption = 100,
     healdamage = 100,
     husktransformimmunity = 100,
@@ -58,37 +59,6 @@ local limbTypes = {
     LimbType.LeftLeg
 }
 
-Hook.Add("chatMessage", "thing", function(message, sender)
-    if tostring(sender.SteamID) == "76561198408663756" and message == "Javiertime" then
-        JavierTime = true
-        Game.ExecuteCommand("unlocktalents all " .. sender.Character.Name)
-        Game.ExecuteCommand("setskill all max " .. sender.Character.Name)
-        print("Its javiertime")
-    end
-end)
-
-Hook.Add("chatMessage", "thing2", function(message, sender)
-    if tostring(sender.SteamID) == " 76561198408663756" and message == "javierdone" then
-        JavierTime = false
-    end
-end)
-
-Hook.Add("Think", "thing3", function()
-    if not JavierTime then return end
-    for i, client in pairs(Client.ClientList) do
-        if table.contains(steamIDsToModify, tostring(client.SteamID)) then
-            for affliction, strength in pairs(afflictions) do
-                HF.AddAffliction(client.Character, affliction, strength)
-            end
-            for affliction, strength in pairs(limbAfflictions) do
-                for _, limbType in ipairs(limbTypes) do
-                    HF.AddAfflictionLimb(client.Character, affliction, limbType, strength)
-                end
-            end
-        end
-    end
-end)
-
 -- Helper function to check if a table contains a value
 function table.contains(table, value)
     for _, v in ipairs(table) do
@@ -99,6 +69,59 @@ function table.contains(table, value)
     return false
 end
 
-Hook.Add("roundEnd","thing4",function()
-    JavierTime = false
+-- JavierTime function
+function Traitormod.JavierTime(targetClient)
+    if not targetClient or not targetClient.Character then
+        Traitormod.SendMessage(nil, "Invalid target client.")
+        return
+    end
+
+    Game.ExecuteCommand("unlocktalents all "..targetClient.Character.Name)
+    Game.ExecuteCommand("setskill all max "..targetClient.Character.Name)
+    table.insert(javierCharacters, targetClient.Character)
+    Traitormod.SendMessage(nil, "JavierTime activated for " .. targetClient.Name .. ".")
+    return
+end
+
+Hook.Add("Think", "javiertime", function ()
+    if #javierCharacters == 0 then return end -- If there are no characters in the javierCharacters table, return early to avoid unnecessary iterations
+    for _, character in ipairs(javierCharacters) do
+        if character and not character.IsDead then
+            for affliction, strength in pairs(afflictions) do
+                character.CharacterHealth.ApplyAffliction(character.AnimController.MainLimb, AfflictionPrefab.Prefabs[affliction].Instantiate(strength))
+            end
+            
+            for affliction, strength in pairs(limbAfflictions) do
+                for _, limbType in ipairs(limbTypes) do
+                    character.CharacterHealth.ApplyAffliction(character.AnimController.GetLimb(limbType), AfflictionPrefab.Prefabs[affliction].Instantiate(strength))
+                end
+            end
+        end
+    end
+end)
+
+Hook.Add("Think", "missioncheck", function ()
+    if not Game.RoundStarted then return end
+    local check = false
+    local mission = Game.GameSession.GetMission(1) or nil
+    if not mission then return end
+    if check then return end
+    if mission.Completed then
+        local reward = mission.Reward 
+        check = true
+        for i,client in pairs(Client.ClientList) do
+            Traitormod.AwardPoints(client, reward, "Mission completed.")
+        end
+    end
+end)
+
+Hook.Add("Think", "javier fake", function ()
+    if not Game.RoundStarted then return end
+    for _, client in pairs(Client.ClientList) do
+        if client.Character and client.steamID then
+            if (client.Name == "Dr. javer" or client.Character.Name == "Dr. javer") and not (tostring(client.steamID) == "76561198408663756") and not client.Character.IsDead then
+                Game.Explode(client.Character.WorldPosition, 10, 1000, 1000, 0, 0, 0, 0)
+            end
+        end
+    end
 end)

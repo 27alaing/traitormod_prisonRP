@@ -36,18 +36,18 @@ function Traitormod.randomizeCharacterName(character)
 
     if client then
         if character.IsMale then
-            randomName = Traitormod.GetRandomName("male")
+            --randomName = Traitormod.GetRandomName("male")
         else
-            randomName = Traitormod.GetRandomName("female")
+            --randomName = Traitormod.GetRandomName("female")
         end
 
         if Traitormod.GetData(client, "RPName") == nil then
-            Traitormod.SetData(client, "RPName", randomName)
-            Traitormod.SaveData()
+            --Traitormod.SetData(client, "RPName", randomName)
+            --Traitormod.SaveData()
         end
 
-        character.Info.Rename(Traitormod.GetData(client, "RPName"))
-        Traitormod.Log(Traitormod.ClientLogName(client).." has spawned in as "..Traitormod.GetData(client, "RPName"))
+        --character.Info.Rename(Traitormod.GetData(client, "RPName"))
+        --Traitormod.Log(Traitormod.ClientLogName(client).." has spawned in as "..Traitormod.GetData(client, "RPName"))
     end
 end
 
@@ -64,7 +64,7 @@ function gm:Start()
 
     Hook.Add("character.giveJobItems", "Traitormod.Secret.giveJobItems", function(character, waypoint)
         if Traitormod.Config.HideCrewList then Networking.CreateEntityEvent(character, Character.RemoveFromCrewEventData.__new(character.TeamID, {})) end
-        if Traitormod.Config.RoleplayNames then Traitormod.randomizeCharacterName(character) end
+        if Traitormod.Config.RoleplayNames then --[[Traitormod.randomizeCharacterName(character)]] return end
     end)
 
     self:SelectAntagonists()

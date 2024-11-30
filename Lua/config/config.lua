@@ -322,6 +322,8 @@ config.RandomEventConfig = {
         --dofile(Traitormod.Path .. "/Lua/config/randomevents/prisoner.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/randomlights.lua"),
         dofile(Traitormod.Path .. "/Lua/config/randomevents/clownmagic.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/CleanupCrew.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/randomevents/NukieTakeover.lua"),
     }
 }
 

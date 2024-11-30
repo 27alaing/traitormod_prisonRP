@@ -34,12 +34,9 @@ local function SpawnCreature(species, client, product, paidPrice, insideHuman)
     end
 
     local spawnPosition
-
     if #spawnPositions == 0 then
-        -- no waypoints? https://c.tenor.com/RgExaLgYIScAAAAC/megamind-megamind-meme.gif
-        spawnPosition = Submarine.MainSub.WorldPosition -- spawn it in the middle of the sub
-
-        Traitormod.Log("Couldnt find any good waypoints, spawning in the middle of the sub.")
+        spawnPosition = Submarine.MainSub.WorldPosition
+        Traitormod.Log("Couldn't find any good waypoints, spawning in the middle of the sub.")
     else
         spawnPosition = spawnPositions[math.random(#spawnPositions)]
     end
@@ -50,7 +47,56 @@ local function SpawnCreature(species, client, product, paidPrice, insideHuman)
     end)
 end
 
+local function SpawnPirate(client, product, paidPrice)
+    local submarine = Submarine.MainSub
+    local subPosition = submarine.WorldPosition
+    local spawnPositions = {}
+    local waypoints = Submarine.MainSub.GetWaypoints(true)
+
+    if LuaUserData.IsTargetType(Game.GameSession.GameMode, "Barotrauma.PvPMode") then
+        waypoints = Submarine.MainSubs[math.random(2)].GetWaypoints(true)
+    end
+
+    for key, value in pairs(waypoints) do
+        if value.CurrentHull == nil then
+            local walls = Level.Loaded.GetTooCloseCells(value.WorldPosition, 250)
+            if #walls == 0 then
+                table.insert(spawnPositions, value.WorldPosition)
+            end
+        end
+    end
+
+    local spawnPosition
+    if #spawnPositions == 0 then
+        spawnPosition = subPosition
+        Traitormod.Log("Couldn't find any good waypoints, spawning in the middle of the sub.")
+    else
+        spawnPosition = spawnPositions[math.random(#spawnPositions)]
+    end
+
+    Traitormod.GeneratePirate(spawnPosition, client, "pirate")
+    Traitormod.Pointshop.TrackRefund(client, product, paidPrice)
+end
+
 category.Products = {
+    {
+        Identifier = "spawn as pirate",
+        Price = 4000,
+        Limit = 3,
+        IsLimitGlobal = true,
+        PricePerLimit = 100,
+        Timeout = 60,
+
+        RoundPrice = {
+            PriceReduction = 500,
+            StartTime = 20,
+            EndTime = 40,
+        },
+        Action = function (client, product, paidPrice)
+            SpawnPirate(client, product, paidPrice)
+        end
+    },
+
     {
         Identifier = "spawnascrawler",
         Price = 400,

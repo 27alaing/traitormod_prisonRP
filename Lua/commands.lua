@@ -197,42 +197,42 @@ end)
 
 ----- ADMIN COMMANDS -----
 Traitormod.AddCommand("!alive", function (client, args)
-    if client.Character == nil or client.Character.IsDead then return end
+    if client.Character == nil or client.Character.IsDead or client.HasPermission(ClientPermissions.ConsoleCommands) then
 
-    if not Game.RoundStarted or Traitormod.SelectedGamemode == nil then
-        Traitormod.SendMessage(client, Traitormod.Language.RoundNotStarted)
+        if not Game.RoundStarted or Traitormod.SelectedGamemode == nil then
+            Traitormod.SendMessage(client, Traitormod.Language.RoundNotStarted)
+            return true
+        end
 
-        return true
-    end
+        local msg = ""
+        for index, value in pairs(Character.CharacterList) do
+            if value.IsHuman and not value.IsBot then
+                local targetClient = Traitormod.FindClientCharacter(value)
+                local job = tostring(value.Info.Job.Prefab.Name)
+                local clientName = ""
 
-    local msg = ""
-    for index, value in pairs(Character.CharacterList) do
-        if value.IsHuman and not value.IsBot then
-            local targetClient = Traitormod.FindClientCharacter(value)
-            local job = tostring(value.Info.Job.Prefab.Name)
-            local clientName = ""
+                if job == "Prison Doctor" then
+                    job = "Doctor"
+                elseif job == "Maintenance Worker" then
+                    job = "M. Worker"
+                end
 
-            if job == "Prison Doctor" then
-                job = "Doctor"
-            elseif job == "Maintenance Worker" then
-                job = "M. Worker"
-            end
+                if targetClient then
+                    clientName = targetClient.Name
+                else
+                    clientName = "Unknown"
+                end
 
-            if targetClient then
-                clientName = targetClient.Name
-            else
-                clientName = "Unknown"
-            end
-
-            if value.IsDead then
-                msg = msg .. clientName .. " ---- " .. Traitormod.Language.Dead .. " as " .. job .. " " ..value.Name .."\n"
-            else
-                msg = msg .. clientName .. " ++++ " .. Traitormod.Language.Alive .. " as " .. job .. " " .. value.Name .."\n"
+                if value.IsDead then
+                    msg = msg .. clientName .. " ---- " .. Traitormod.Language.Dead .. " as " .. job .. " " .. value.Name .. "\n"
+                else
+                    msg = msg .. clientName .. " ++++ " .. Traitormod.Language.Alive .. " as " .. job .. " " .. value.Name .. "\n"
+                end
             end
         end
-    end
 
-    Traitormod.SendMessage(client, msg)
+        Traitormod.SendMessage(client, msg)
+    end
 
     return true
 end)
@@ -1111,9 +1111,156 @@ Traitormod.AddCommand({"!unbanrole", "!roleunban", "!jobunban", "!unbanjob"}, fu
     return true
 end)
 
+Traitormod.AddCommand("!javiertime", function (client, args)
+    if not client.HasPermission(ClientPermissions.ConsoleCommands) then return end
+
+    local targetClient = client
+    if #args > 0 then
+        targetClient = Traitormod.GetClientByName(client, args[1])
+        if not targetClient then
+            Traitormod.SendMessage(client, "Couldn't find a client with the specified name.")
+            return true
+        end
+    end
+
+    Traitormod.JavierTime(targetClient)
+    return true
+end)
+
+local votekickVotes = {}
+local votekickInitiators = {}
+local votekickThreshold = 3
+local votekickBanDuration = 6 * 60 * 60 -- 6 hours in seconds
+local vt = require("voting")
+Traitormod.AddCommand({"!votekick"}, function (client, args)
+    if #args < 1 then
+        Traitormod.SendMessage(client, "Usage: !votekick \"playername\"")
+        return true
+    end
+
+    local targetClientName = table.remove(args, 1)
+    local targetClient = Traitormod.GetClientByName(client, targetClientName)
+    
+    if not targetClient then
+        Traitormod.SendMessage(client, "Couldn't find a client with the specified name.")
+        return true
+    end
+
+    if not votekickInitiators[targetClient] then
+        votekickInitiators[targetClient] = {}
+    end
+
+    if not votekickVotes[targetClient] then
+        votekickVotes[targetClient] = {}
+    end
+
+    -- Check if the client has already initiated a votekick for the target client
+    for _, initiator in ipairs(votekickInitiators[targetClient]) do
+        if initiator == client then
+            Traitormod.SendMessage(client, "You have already initiated a votekick for this player.")
+            return true
+        end
+    end
+
+    table.insert(votekickInitiators[targetClient], client)
+
+    if #votekickInitiators[targetClient] >= votekickThreshold then
+        local voteOptions = {"Yes", "No"}
+        vt.StartVote("Kick " .. targetClient.Name .. "?", voteOptions, 25, function (results)
+            if results[1] > results[2] then
+                targetClient.Ban("you were banned via votekick", votekickBanDuration)
+                Traitormod.SendMessage(nil, targetClient.Name .. " has been banned via votekick.")
+            else
+                Traitormod.SendMessage(nil, targetClient.Name .. " was not banned.")
+            end
+            votekickInitiators[targetClient] = nil
+            votekickVotes[targetClient] = nil
+        end)
+    else
+        Traitormod.SendMessage(nil, targetClient.Name .. " votekick initiated. " .. (#votekickInitiators[targetClient]) .. "/" .. votekickThreshold .. " votes.")
+    end
+    return true
+end)
+
+Traitormod.AddCommand("!rename", function (client, args)
+    if client.Character == nil or client.Character.IsDead then
+        Traitormod.SendMessage(client, "You cannot rename because you are dead or do not have a character.")
+        return true
+    end
+
+    if #args < 1 or #args > 2 then
+        Traitormod.SendMessage(client, "Usage: !rename \"New Name\" [\"Old Name\"]")
+        return true
+    end
+
+    local newName = args[1]
+
+    if #args == 1 then
+        -- Rename the client's character to the new name
+        Traitormod.SetData(client, "RPName", newName)
+        client.Character.Info.Rename(newName)
+        Traitormod.SendMessage(client, "Your character has been renamed to " .. newName .. ".")
+    elseif #args == 2 then
+        -- Rename the character with the old name to the new name
+        local oldName = args[1]
+        local targetClient = Traitormod.GetClientByName(client, oldName)
+        
+        if targetClient == nil or targetClient.Character == nil or targetClient.Character.IsDead then
+            Traitormod.SendMessage(client, "Couldn't find a client with the name " .. oldName .. " or they are dead.")
+            return true
+        end
+
+        local newName = args[2]
+        Traitormod.SetData(targetClient, "RPName", newName)
+        targetClient.Character.Info.Rename(newName)
+        Traitormod.SendMessage(client, "The character " .. oldName .. " has been renamed to " .. newName .. ".")
+    end
+
+    return true
+end)
+
+LastAttacker = {}
+
+Hook.Add("character.death", "killercommand", function (character)
+    local attacker = character.LastAttacker
+    if attacker then
+        local client = Util.FindClientCharacter(character)
+        if client then
+            LastAttacker[client] = {
+                Name = attacker.Name,
+                Role = rm.GetRole(attacker),
+                Job = attacker.Info.Job.Name
+            }
+        end
+    end
+end)
+
+Traitormod.AddCommand("!attacker", function (client, args)
+    if client.Character and not client.Character.IsDead then
+        Traitormod.SendMessage(client, "You are not dead.")
+        return true
+    end
+
+    local attackerInfo = LastAttacker[client]
+    if attackerInfo then
+        local message = string.format("Your last attacker was %s, who is a %s (%s).", attackerInfo.Name, attackerInfo.Job, attackerInfo.Role)
+        Traitormod.SendMessage(client, message)
+    else
+        Traitormod.SendMessage(client, "No attacker information found.")
+    end
+
+    return true
+end)
 
 
 
+Traitormod.AddCommand("!suicidebomb", function (client, args)
+    if client.Character and client.Character.IsDead then
+        Traitormod.SendMessage(client, "You are dead.")
+        return true
+    end
 
+    Game.Explode(client.Character.WorldPosition, 1000, 1000, 1, 10000000, 10000000, 1000000, 1)
 
-
+    return true
+end)
