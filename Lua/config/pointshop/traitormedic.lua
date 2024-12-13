@@ -27,6 +27,14 @@ end
 
 category.Products = {
     {
+        Identifier = "Radiating Health Scanner",
+        Price = 750,
+        Limit = 1,
+        IsLimitGlobal = true,
+        Items = {"healthscannerevil"},
+    },
+
+    {
         Identifier = "separatistgear",
         Price = 1500,
         Limit = 3,
