@@ -9,7 +9,7 @@ function Traitormod.GeneratePirate(position, client, loadoutType)
     local character = Character.Create(info, position, info.Name, 0, false, true)
     character.CanSpeak = true
     character.TeamID = CharacterTeamType.Team2
-    character.GiveJobItems(nil)
+    character.GiveJobItems(true)
     local idCard = character.Inventory.GetItemInLimbSlot(InvSlotType.Card)
     if idCard then
         idCard.NonPlayerTeamInteractable = true
