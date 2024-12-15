@@ -349,6 +349,7 @@ config.PointShopConfig = {
         dofile(Traitormod.Path .. "/Lua/config/pointshop/chef.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/eventmanager.lua"),
         dofile(Traitormod.Path .. "/Lua/config/pointshop/eventships.lua"),
+        dofile(Traitormod.Path .. "/Lua/config/pointshop/patreonvanity.lua"),
     }
 }
 
